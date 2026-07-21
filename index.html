@@ -241,7 +241,7 @@
     font-size:0.9rem;color:transparent;
   }
   .feed-toggle.on{background:var(--feed);border-color:var(--feed);color:#fff;}
-  .entry-row.fed{background:var(--feed-soft);border:1px solid var(--feed);}
+  .entry-row.fed{background:var(--sleep-soft);border:1px solid var(--sleep);}
   .feed-warn{color:var(--poop);font-size:0.72rem;font-weight:700;}
   .entry-row.low-warn{background:var(--poop-soft);border:1px solid var(--poop);}
   .feed-warn-badge{
@@ -453,7 +453,10 @@
     data.feedings = data.feedings || [];
     data.feedings.forEach(f=>{
       if(typeof f.done!=="boolean") f.done=false;
-      if(!f.target) f.target = 120;
+      if(!f.target){
+        const h = f.time ? Number(f.time.split(":")[0]) : null;
+        f.target = (h===2 || h===23) ? 90 : 120;
+      }
     });
     data.sleeps = data.sleeps || [];
     data.pees = data.pees || [];
