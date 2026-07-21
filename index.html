@@ -484,6 +484,8 @@
   let currentData = emptyDaily();
   let growthEntries = [];
   let activeTab = "daily";
+  let lastDailySnapshot = "";
+  let lastGrowthSnapshot = "";
 
   // ---------- GAS backend (Rick 私人 Google Sheet) ----------
   const GAS_URL = "https://script.google.com/macros/s/AKfycbwxuwaVjQgn3xpZ3PSP1cKkyFoiBNGRYV9SgLJgOiujH3NtFDxWNDBqXn_HwfOoVf7TPA/exec";
@@ -788,6 +790,7 @@
   async function persist(){
     setSyncStatus("儲存中…");
     await saveDaily(currentDate, currentData);
+    lastDailySnapshot = JSON.stringify(currentData);
     setSyncStatus("已同步");
     renderTimeline();
     renderSummary();
@@ -918,14 +921,14 @@
   // ---------- date navigation ----------
   document.getElementById("prevDay").onclick = async ()=>{
     currentDate = new Date(currentDate); currentDate.setDate(currentDate.getDate()-1);
-    currentData = await loadDaily(currentDate); renderAll();
+    currentData = await loadDaily(currentDate); lastDailySnapshot = JSON.stringify(currentData); renderAll();
   };
   document.getElementById("nextDay").onclick = async ()=>{
     currentDate = new Date(currentDate); currentDate.setDate(currentDate.getDate()+1);
-    currentData = await loadDaily(currentDate); renderAll();
+    currentData = await loadDaily(currentDate); lastDailySnapshot = JSON.stringify(currentData); renderAll();
   };
   document.getElementById("gotoToday").onclick = async ()=>{
-    currentDate = new Date(); currentData = await loadDaily(currentDate); renderAll();
+    currentDate = new Date(); currentData = await loadDaily(currentDate); lastDailySnapshot = JSON.stringify(currentData); renderAll();
   };
 
   // ---------- tabs ----------
@@ -1024,6 +1027,7 @@
     growthEntries.push(entry);
     setSyncStatus("儲存中…");
     await saveGrowth(growthEntries);
+    lastGrowthSnapshot = JSON.stringify(growthEntries);
     setSyncStatus("已同步");
     document.getElementById("gWeight").value = "";
     document.getElementById("gHeight").value = "";
@@ -1035,6 +1039,7 @@
       growthEntries = growthEntries.filter(g=>g.id!==e.target.dataset.gdel);
       setSyncStatus("儲存中…");
       await saveGrowth(growthEntries);
+      lastGrowthSnapshot = JSON.stringify(growthEntries);
       setSyncStatus("已同步");
       renderGrowth();
     }
@@ -1051,12 +1056,44 @@
       document.getElementById("ageSub").textContent = `${Math.floor(days/7)} 週又 ${days%7} 天`;
     }
     currentData = await loadDaily(currentDate);
+    lastDailySnapshot = JSON.stringify(currentData);
     growthEntries = await loadGrowth();
+    lastGrowthSnapshot = JSON.stringify(growthEntries);
     document.getElementById("gDate").value = toKey(new Date());
     renderAll();
     setSyncStatus("已同步");
+    startPolling();
   }
   init();
+
+  // ---------- polling for near-live sync ----------
+  function isEditingField(){
+    const el = document.activeElement;
+    return !!(el && ["INPUT","TEXTAREA","SELECT"].includes(el.tagName));
+  }
+  async function pollDaily(){
+    if(document.hidden || activeTab!=="daily" || isEditingField()) return;
+    const value = await gasGet("daily:"+toKey(currentDate));
+    if(!value || value===lastDailySnapshot) return;
+    try{
+      currentData = normalizeDaily(JSON.parse(value));
+      lastDailySnapshot = value;
+      renderAll();
+    }catch(e){}
+  }
+  async function pollGrowth(){
+    if(document.hidden || activeTab!=="weekly" || isEditingField()) return;
+    const value = await gasGet("growth:all");
+    if(!value || value===lastGrowthSnapshot) return;
+    try{
+      growthEntries = JSON.parse(value);
+      lastGrowthSnapshot = value;
+      renderGrowth();
+    }catch(e){}
+  }
+  function startPolling(){
+    setInterval(()=>{ pollDaily(); pollGrowth(); }, 5000);
+  }
 })();
 </script>
 </body>
