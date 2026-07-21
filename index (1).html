@@ -1,0 +1,1060 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="芊健康日誌">
+<meta name="theme-color" content="#FAF5EF">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="manifest" href="manifest.json">
+<title>芊健康日誌</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Nunito+Sans:wght@400;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap');
+
+  :root{
+    --bg:#FAF5EF;
+    --surface:#FFFFFF;
+    --ink:#3B322E;
+    --ink-soft:#8A7E76;
+    --line:#EAE0D3;
+    --feed:#DE9A5C;
+    --feed-soft:#FBE6C8;
+    --sleep:#6E9468;
+    --sleep-soft:#DEEBDA;
+    --pee:#6E93B3;
+    --pee-soft:#DCE8F0;
+    --poop:#C1707C;
+    --poop-soft:#F4DBDF;
+    --health:#8B7CAE;
+    --health-soft:#E7E1F1;
+    --growth:#4F7590;
+    --growth-soft:#DCE6EC;
+    --radius:18px;
+    --radius-sm:10px;
+    --shadow:0 2px 14px rgba(59,50,46,0.07);
+  }
+
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--ink);
+    font-family:'Nunito Sans',sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  .app{
+    max-width:880px;margin:0 auto;padding:20px 16px 80px;
+    padding-top:calc(20px + env(safe-area-inset-top));
+    padding-bottom:calc(80px + env(safe-area-inset-bottom));
+  }
+
+  /* ---------- Header ---------- */
+  header.top{
+    display:flex;flex-direction:column;gap:14px;margin-bottom:18px;
+  }
+  .brand{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;}
+  .brand h1{
+    font-family:'Fraunces',serif;font-weight:600;font-size:1.7rem;margin:0;
+    letter-spacing:-0.01em;cursor:text;
+  }
+  .brand h1:focus{outline:2px solid var(--feed);outline-offset:3px;border-radius:6px;}
+  .brand .sub{font-size:0.85rem;color:var(--ink-soft);}
+
+  .date-nav{
+    display:flex;align-items:center;gap:10px;background:var(--surface);
+    border:1px solid var(--line);border-radius:999px;padding:6px 8px;
+    box-shadow:var(--shadow);width:fit-content;
+  }
+  .date-nav button.arrow{
+    width:34px;height:34px;border-radius:50%;border:none;background:transparent;
+    font-size:1.1rem;cursor:pointer;color:var(--ink);
+    display:flex;align-items:center;justify-content:center;
+  }
+  .date-nav button.arrow:hover{background:var(--bg);}
+  .date-nav .date-label{
+    font-weight:700;font-size:0.95rem;min-width:150px;text-align:center;
+  }
+  .today-btn{
+    border:none;background:var(--feed-soft);color:var(--feed);font-weight:700;
+    font-size:0.78rem;padding:6px 12px;border-radius:999px;cursor:pointer;
+  }
+  .today-btn:hover{filter:brightness(0.96);}
+
+  .tabs{display:flex;gap:8px;}
+  .tab{
+    border:1px solid var(--line);background:var(--surface);color:var(--ink-soft);
+    font-family:'Nunito Sans',sans-serif;font-weight:700;font-size:0.9rem;
+    padding:9px 18px;border-radius:999px;cursor:pointer;
+  }
+  .tab.active{background:var(--ink);color:#fff;border-color:var(--ink);}
+
+  /* ---------- Timeline (signature element) ---------- */
+  .summary-bar{
+    display:flex;flex-wrap:wrap;gap:0;background:var(--surface);border-radius:var(--radius);
+    box-shadow:var(--shadow);margin-bottom:18px;overflow:hidden;
+  }
+  .stat-item{
+    flex:1;min-width:110px;padding:14px 16px;display:flex;flex-direction:column;gap:4px;
+    border-right:1px solid var(--line);
+  }
+  .stat-item:last-child{border-right:none;}
+  .stat-label{font-size:0.72rem;color:var(--ink-soft);font-weight:700;}
+  .stat-value{font-family:'JetBrains Mono',monospace;font-weight:700;font-size:1.05rem;color:var(--ink);}
+  .stat-value.warn{color:var(--poop);}
+  @media (max-width:680px){
+    .stat-item{min-width:45%;border-right:none;border-bottom:1px solid var(--line);}
+  }
+
+  .timeline-card{
+    background:var(--surface);border-radius:var(--radius);box-shadow:var(--shadow);
+    padding:20px 20px 16px;margin-bottom:18px;
+  }
+  .timeline-card h2{
+    font-family:'Fraunces',serif;font-size:1.05rem;font-weight:600;margin:0 0 4px;
+  }
+  .timeline-sub{font-size:0.78rem;color:var(--ink-soft);margin-bottom:14px;}
+  .timeline-track{
+    position:relative;height:64px;border-radius:12px;
+    background:linear-gradient(90deg,
+      #EDE6F5 0%, #EDE6F5 8.3%,
+      #DCE8F0 8.3%, #DCE8F0 25%,
+      #FFF7E4 25%, #FFF7E4 33%,
+      #FFF3D6 33%, #FFF3D6 58%,
+      #FDE9CE 58%, #FDE9CE 75%,
+      #E7E4F2 75%, #E7E4F2 87.5%,
+      #DCE1EE 87.5%, #DCE1EE 100%);
+    border:1px solid var(--line);overflow:visible;
+  }
+  .tl-tick{
+    position:absolute;top:0;bottom:0;width:1px;background:rgba(59,50,46,0.08);
+  }
+  .tl-tick-label{
+    position:absolute;top:100%;margin-top:4px;font-size:0.65rem;color:var(--ink-soft);
+    transform:translateX(-50%);font-family:'JetBrains Mono',monospace;
+  }
+  .tl-sleep{
+    position:absolute;top:6px;height:12px;background:var(--sleep);border-radius:7px;opacity:0.85;
+  }
+  .tl-dot{
+    position:absolute;width:11px;height:11px;border-radius:50%;border:2px solid #fff;
+    box-shadow:0 1px 3px rgba(0,0,0,0.2);cursor:default;
+  }
+  .tl-dot.pee{background:var(--pee);top:22px;}
+  .tl-dot.feed{background:var(--feed);top:34px;}
+  .tl-dot.poop{background:var(--poop);top:46px;}
+  .tl-now{
+    position:absolute;top:-4px;bottom:-4px;width:2px;background:var(--ink);opacity:0.5;
+  }
+  .tl-legend{
+    display:flex;gap:16px;flex-wrap:wrap;margin-top:38px;font-size:0.75rem;color:var(--ink-soft);
+  }
+  .tl-legend span{display:inline-flex;align-items:center;gap:5px;}
+  .tl-legend i{width:9px;height:9px;border-radius:50%;display:inline-block;}
+
+  /* ---------- Cards grid ---------- */
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+  @media (max-width:680px){.grid{grid-template-columns:1fr;}}
+
+  .card{
+    background:var(--surface);border-radius:var(--radius);box-shadow:var(--shadow);
+    padding:18px;display:flex;flex-direction:column;gap:12px;
+  }
+  .card-head{display:flex;align-items:center;justify-content:space-between;}
+  .card-title{
+    display:flex;align-items:center;gap:8px;font-family:'Fraunces',serif;
+    font-weight:600;font-size:1.02rem;
+  }
+  .dot-badge{width:10px;height:10px;border-radius:50%;flex:none;}
+  .card-summary{font-size:0.78rem;color:var(--ink-soft);font-family:'JetBrains Mono',monospace;}
+
+  .entry-row{
+    display:flex;align-items:center;gap:8px;background:var(--bg);
+    border-radius:var(--radius-sm);padding:8px 10px;flex-wrap:wrap;
+  }
+  .entry-row input[type="time"],
+  .entry-row input[type="number"],
+  .entry-row select{
+    border:1px solid var(--line);background:#fff;border-radius:8px;
+    padding:6px 8px;font-family:'JetBrains Mono',monospace;font-size:0.82rem;color:var(--ink);
+  }
+  .entry-row input[type="text"]{
+    border:1px solid var(--line);background:#fff;border-radius:8px;
+    padding:6px 8px;font-family:'Nunito Sans',sans-serif;font-size:0.82rem;color:var(--ink);
+    flex:1;min-width:100px;
+  }
+  .entry-row .unit{font-size:0.75rem;color:var(--ink-soft);}
+  .del-btn{
+    margin-left:auto;border:none;background:none;color:var(--ink-soft);
+    font-size:1rem;cursor:pointer;width:26px;height:26px;border-radius:50%;
+    display:flex;align-items:center;justify-content:center;flex:none;
+  }
+  .del-btn:hover{background:#fff;color:var(--poop);}
+
+  .add-btn{
+    border:1.5px dashed var(--line);background:transparent;color:var(--ink-soft);
+    font-weight:700;font-size:0.82rem;padding:8px 12px;border-radius:var(--radius-sm);
+    cursor:pointer;width:100%;
+  }
+  .add-btn:hover{border-color:var(--ink-soft);color:var(--ink);}
+
+  .stepper{display:flex;align-items:center;gap:10px;}
+  .stepper button{
+    width:32px;height:32px;border-radius:50%;border:1px solid var(--line);
+    background:var(--bg);font-size:1.1rem;cursor:pointer;color:var(--ink);
+  }
+  .stepper button:hover{background:#fff;}
+  .stepper .val{font-family:'JetBrains Mono',monospace;font-weight:700;font-size:1.05rem;min-width:24px;text-align:center;}
+  .stepper .lbl{font-size:0.82rem;color:var(--ink-soft);}
+
+  .field-row{display:flex;flex-direction:column;gap:6px;}
+  .field-row label{font-size:0.8rem;font-weight:700;color:var(--ink-soft);}
+  .field-row input,.field-row textarea,.field-row select{
+    border:1px solid var(--line);border-radius:var(--radius-sm);padding:8px 10px;
+    font-family:'Nunito Sans',sans-serif;font-size:0.88rem;color:var(--ink);background:var(--bg);
+  }
+  .field-row textarea{resize:vertical;min-height:60px;font-family:'Nunito Sans',sans-serif;}
+
+  .checks{display:flex;flex-wrap:wrap;gap:8px;}
+  .chip{
+    display:flex;align-items:center;gap:6px;border:1px solid var(--line);
+    border-radius:999px;padding:6px 12px;font-size:0.8rem;cursor:pointer;background:var(--bg);
+  }
+  .chip.on{background:var(--health-soft);border-color:var(--health);color:var(--health);font-weight:700;}
+  .chip input{display:none;}
+  .chip.supp-chip{border:1.5px solid var(--line);color:var(--ink-soft);font-weight:700;width:100%;justify-content:center;}
+  .chip.supp-chip.on{background:var(--feed-soft);border-color:var(--feed);color:var(--feed);}
+  .chip.sleep-preset{background:var(--sleep-soft);border-color:var(--sleep);color:var(--sleep);font-weight:700;}
+
+  .period-badge{
+    font-size:0.68rem;font-weight:700;color:var(--feed);background:var(--feed-soft);
+    border-radius:6px;padding:3px 6px;flex:none;
+  }
+  .stepper.mini{gap:6px;}
+  .stepper.mini button{width:26px;height:26px;font-size:0.95rem;}
+  .stepper.mini .val{font-size:0.85rem;min-width:56px;}
+  .feed-toggle{
+    width:28px;height:28px;border-radius:50%;border:2px solid var(--line);background:#fff;
+    cursor:pointer;flex:none;display:flex;align-items:center;justify-content:center;
+    font-size:0.9rem;color:transparent;
+  }
+  .feed-toggle.on{background:var(--feed);border-color:var(--feed);color:#fff;}
+  .entry-row.fed{background:var(--feed-soft);border:1px solid var(--feed);}
+  .feed-warn{color:var(--poop);font-size:0.72rem;font-weight:700;}
+  .entry-row.low-warn{background:var(--poop-soft);border:1px solid var(--poop);}
+  .feed-warn-badge{
+    width:20px;height:20px;border-radius:50%;background:var(--poop);color:#fff;
+    font-weight:800;font-size:0.85rem;display:flex;align-items:center;justify-content:center;flex:none;
+  }
+
+  /* ---------- Weekly / growth tab ---------- */
+  .growth-form{
+    background:var(--surface);border-radius:var(--radius);box-shadow:var(--shadow);
+    padding:18px;display:grid;grid-template-columns:repeat(4,1fr) auto;gap:10px;align-items:end;margin-bottom:18px;
+  }
+  @media (max-width:680px){.growth-form{grid-template-columns:1fr 1fr;}}
+  .growth-form button.primary{
+    grid-column:auto;border:none;background:var(--growth);color:#fff;font-weight:700;
+    padding:10px 16px;border-radius:var(--radius-sm);cursor:pointer;height:fit-content;
+  }
+  .growth-form button.primary:hover{filter:brightness(1.08);}
+
+  .growth-charts{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:18px;}
+  @media (max-width:680px){.growth-charts{grid-template-columns:1fr;}}
+  .chart-card{background:var(--surface);border-radius:var(--radius);box-shadow:var(--shadow);padding:14px 16px;}
+  .chart-card h3{font-size:0.82rem;margin:0 0 8px;color:var(--ink-soft);font-weight:700;}
+  .chart-card svg{width:100%;height:70px;display:block;}
+
+  .growth-list{display:flex;flex-direction:column;gap:8px;}
+  .growth-row{
+    background:var(--surface);border-radius:var(--radius-sm);box-shadow:var(--shadow);
+    padding:12px 14px;display:flex;align-items:center;gap:16px;flex-wrap:wrap;font-size:0.85rem;
+  }
+  .growth-row .g-date{font-family:'JetBrains Mono',monospace;font-weight:700;min-width:96px;}
+  .growth-row .g-stat{color:var(--ink-soft);}
+  .growth-row .g-stat b{color:var(--ink);font-family:'JetBrains Mono',monospace;}
+  .growth-row .g-note{flex:1;min-width:120px;color:var(--ink-soft);font-style:italic;}
+
+  .empty-hint{color:var(--ink-soft);font-size:0.82rem;text-align:center;padding:20px 0;}
+
+  @media (prefers-reduced-motion:no-preference){
+    .card, .timeline-card{transition:box-shadow 0.2s ease;}
+  }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <header class="top">
+    <div class="brand">
+      <h1 id="babyName" contenteditable="true" spellcheck="false">芊健康日誌</h1>
+      <span class="sub" id="ageSub"></span>
+      <span class="sub" id="syncStatus" style="margin-left:auto;"></span>
+    </div>
+
+    <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;justify-content:space-between;">
+      <div class="date-nav">
+        <button class="arrow" id="prevDay" aria-label="前一天">‹</button>
+        <span class="date-label" id="dateLabel"></span>
+        <button class="arrow" id="nextDay" aria-label="後一天">›</button>
+      </div>
+      <button class="today-btn" id="gotoToday" style="display:none;">回到今天</button>
+      <div class="tabs">
+        <button class="tab active" data-tab="daily">每日紀錄</button>
+        <button class="tab" data-tab="weekly">生長紀錄</button>
+      </div>
+    </div>
+  </header>
+
+  <div class="summary-bar" id="summaryBar">
+    <div class="stat-item"><span class="stat-label">體溫</span><span class="stat-value" id="statTemp">–</span></div>
+    <div class="stat-item"><span class="stat-label">不適症狀</span><span class="stat-value" id="statSymptoms">無</span></div>
+    <div class="stat-item"><span class="stat-label">已餵總奶量</span><span class="stat-value" id="statFeed">0 cc</span></div>
+    <div class="stat-item"><span class="stat-label">排泄總次數</span><span class="stat-value" id="statDischarge">0 次</span></div>
+    <div class="stat-item"><span class="stat-label">睡眠總時數</span><span class="stat-value" id="statSleep">0 小時</span></div>
+  </div>
+
+  <!-- DAILY TAB -->
+  <div id="dailyTab">
+
+    <div class="timeline-card">
+      <h2>今日時間軸</h2>
+      <div class="timeline-track" id="timelineTrack" style="margin-top:14px;"></div>
+      <div class="tl-legend">
+        <span><i style="background:var(--feed)"></i>餵食</span>
+        <span><i style="background:var(--sleep)"></i>睡眠</span>
+        <span><i style="background:var(--pee)"></i>小便</span>
+        <span><i style="background:var(--poop)"></i>大便</span>
+      </div>
+    </div>
+
+    <div class="grid">
+
+      <div class="card">
+        <div class="card-head">
+          <div class="card-title"><span class="dot-badge" style="background:var(--feed)"></span>餵食(瓶餵)</div>
+          <div class="card-summary" id="feedSummary">已餵總奶量 0 cc</div>
+        </div>
+        <button class="chip supp-chip" id="supplementBtn">寶乖牙・點擊記錄</button>
+        <div id="feedList"></div>
+        <button class="add-btn" id="addFeed">+ 新增餵食紀錄</button>
+      </div>
+
+      <div class="card">
+        <div class="card-head">
+          <div class="card-title"><span class="dot-badge" style="background:var(--sleep)"></span>睡眠</div>
+          <div class="card-summary" id="sleepSummary">共 0 小時</div>
+        </div>
+        <div class="checks" id="sleepPresets"></div>
+        <div id="sleepList"></div>
+        <button class="add-btn" id="addSleep">+ 自訂時段</button>
+      </div>
+
+      <div class="card">
+        <div class="card-head">
+          <div class="card-title"><span class="dot-badge" style="background:var(--pee)"></span>排泄</div>
+          <div class="card-summary" id="dischargeSummary">大便 0 次・小便 0 次</div>
+        </div>
+        <button class="add-btn" id="addPoop">+ 記一次大便</button>
+        <div id="poopList"></div>
+        <div style="border-top:1px solid var(--line);margin:2px 0;"></div>
+        <button class="add-btn" id="addPee">+ 記一次小便</button>
+        <div id="peeList"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-head">
+          <div class="card-title"><span class="dot-badge" style="background:var(--health)"></span>健康狀況</div>
+        </div>
+        <div class="field-row">
+          <label>體溫°C</label>
+          <input type="number" step="0.1" id="tempInput">
+        </div>
+        <div class="field-row">
+          <label>症狀</label>
+          <div class="checks" id="symptomChips"></div>
+        </div>
+        <div class="field-row">
+          <label>情緒狀況</label>
+          <select id="moodSelect">
+            <option value="">未紀錄</option>
+            <option value="穩定愉快">穩定愉快</option>
+            <option value="正常">正常</option>
+            <option value="易哭鬧">易哭鬧</option>
+            <option value="不易安撫">不易安撫</option>
+          </select>
+        </div>
+        <div class="field-row">
+          <label>備註</label>
+          <textarea id="noteInput" placeholder="自由紀錄任何想備註的事..."></textarea>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- WEEKLY TAB -->
+  <div id="weeklyTab" style="display:none;">
+    <div class="growth-form">
+      <div class="field-row"><label>日期</label><input type="date" id="gDate"></div>
+      <div class="field-row"><label>體重(kg)</label><input type="number" step="0.01" id="gWeight" placeholder="例如 5.20"></div>
+      <div class="field-row"><label>身長(cm)</label><input type="number" step="0.1" id="gHeight" placeholder="例如 58.0"></div>
+      <div class="field-row"><label>頭圍(cm)</label><input type="number" step="0.1" id="gHead" placeholder="例如 39.0"></div>
+      <button class="primary" id="addGrowth">新增紀錄</button>
+    </div>
+
+    <div class="growth-charts">
+      <div class="chart-card"><h3>體重趨勢(kg)</h3><svg id="chartWeight" viewBox="0 0 300 70"></svg></div>
+      <div class="chart-card"><h3>身長趨勢(cm)</h3><svg id="chartHeight" viewBox="0 0 300 70"></svg></div>
+      <div class="chart-card"><h3>頭圍趨勢(cm)</h3><svg id="chartHead" viewBox="0 0 300 70"></svg></div>
+    </div>
+
+    <div class="growth-list" id="growthList"></div>
+  </div>
+
+</div>
+
+<script>
+(function(){
+  const SYMPTOM_OPTIONS = ["咳嗽","鼻塞","發燒","冒冷汗","受傷","其他"];
+  const SLEEP_PRESETS = [
+    {label:"夜間 03:00–07:00", start:"03:00", end:"07:00"},
+    {label:"早上 08:00–11:00", start:"08:00", end:"11:00"},
+    {label:"中午 12:00–15:00", start:"12:00", end:"15:00"},
+    {label:"下午 16:00–19:00", start:"16:00", end:"19:00"},
+    {label:"晚上 20:00–23:00", start:"20:00", end:"23:00"},
+    {label:"凌晨 00:00–02:00", start:"00:00", end:"02:00"}
+  ];
+  const pad = n => String(n).padStart(2,"0");
+  const toKey = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+  const uid = () => Date.now().toString(36)+Math.random().toString(36).slice(2,7);
+  const nowStr = () => { const d=new Date(); return pad(d.getHours())+":"+pad(d.getMinutes()); };
+
+  function emptyDaily(){
+    return {
+      feedings:[], sleeps:[], pees:[], poops:[],
+      health:{temp:"",symptoms:[],mood:"",note:""},
+      supplement:{given:false,time:""}
+    };
+  }
+  function defaultFeedings(){
+    return [
+      {id:uid(), time:"02:00", amount:90, done:false, target:90},
+      {id:uid(), time:"07:00", amount:120, done:false, target:120},
+      {id:uid(), time:"11:00", amount:120, done:false, target:120},
+      {id:uid(), time:"15:00", amount:120, done:false, target:120},
+      {id:uid(), time:"19:00", amount:120, done:false, target:120},
+      {id:uid(), time:"23:00", amount:90, done:false, target:90}
+    ];
+  }
+  function normalizeDaily(data){
+    data.feedings = data.feedings || [];
+    data.feedings.forEach(f=>{
+      if(typeof f.done!=="boolean") f.done=false;
+      if(!f.target) f.target = 120;
+    });
+    data.sleeps = data.sleeps || [];
+    data.pees = data.pees || [];
+    data.poops = data.poops || [];
+    data.health = data.health || {};
+    data.health.temp = data.health.temp || "";
+    data.health.symptoms = data.health.symptoms || [];
+    data.health.mood = data.health.mood || "";
+    data.health.note = data.health.note || "";
+    data.supplement = data.supplement || {given:false,time:""};
+    return data;
+  }
+  function periodLabel(t){
+    if(!t) return "";
+    const h = Number(t.split(":")[0]);
+    if(h>=0 && h<5) return "凌晨";
+    if(h>=5 && h<11) return "早上";
+    if(h>=11 && h<14) return "中午";
+    if(h>=14 && h<18) return "下午";
+    if(h>=18 && h<22) return "晚上";
+    return "夜間";
+  }
+
+  let currentDate = new Date();
+  let currentData = emptyDaily();
+  let growthEntries = [];
+  let activeTab = "daily";
+
+  // ---------- GAS backend (Rick 私人 Google Sheet) ----------
+  const GAS_URL = "https://script.google.com/macros/s/AKfycbwxuwaVjQgn3xpZ3PSP1cKkyFoiBNGRYV9SgLJgOiujH3NtFDxWNDBqXn_HwfOoVf7TPA/exec";
+
+  async function gasGet(key){
+    try{
+      const res = await fetch(`${GAS_URL}?action=get&key=${encodeURIComponent(key)}`);
+      const data = await res.json();
+      return (data && data.value) ? data.value : null;
+    }catch(e){ console.error("讀取失敗", e); return null; }
+  }
+  async function gasSet(key, value){
+    try{
+      const body = new URLSearchParams({action:"set", key, value});
+      await fetch(GAS_URL, {method:"POST", body});
+    }catch(e){ console.error("儲存失敗", e); }
+  }
+
+  // ---------- storage helpers ----------
+  async function loadDaily(dateObj){
+    const key = "daily:"+toKey(dateObj);
+    const value = await gasGet(key);
+    if(value){
+      try{ return normalizeDaily(JSON.parse(value)); }catch(e){}
+    }
+    const fresh = emptyDaily();
+    fresh.feedings = defaultFeedings();
+    await saveDaily(dateObj, fresh);
+    return fresh;
+  }
+  async function saveDaily(dateObj, data){
+    const key = "daily:"+toKey(dateObj);
+    await gasSet(key, JSON.stringify(data));
+  }
+  async function loadGrowth(){
+    const value = await gasGet("growth:all");
+    if(value){ try{ return JSON.parse(value); }catch(e){} }
+    return [];
+  }
+  async function saveGrowth(entries){
+    await gasSet("growth:all", JSON.stringify(entries));
+  }
+  async function loadProfile(){
+    const value = await gasGet("baby:profile");
+    if(value){ try{ return JSON.parse(value); }catch(e){} }
+    return { name:"芊健康日誌", birth:"" };
+  }
+  async function saveProfile(p){
+    await gasSet("baby:profile", JSON.stringify(p));
+  }
+
+  // ---------- date nav ----------
+  function isSameDay(a,b){ return toKey(a)===toKey(b); }
+  function fmtDateLabel(d){
+    return d.toLocaleDateString('zh-TW',{month:'long',day:'numeric',weekday:'short'});
+  }
+  async function renderDateNav(){
+    document.getElementById("dateLabel").textContent = fmtDateLabel(currentDate);
+    document.getElementById("gotoToday").style.display = isSameDay(currentDate,new Date()) ? "none":"inline-block";
+  }
+
+  // ---------- timeline ----------
+  function timeToPercent(hhmm){
+    const [h,m] = hhmm.split(":").map(Number);
+    return ((h*60+m)/1440)*100;
+  }
+  function renderTimeline(){
+    const track = document.getElementById("timelineTrack");
+    track.innerHTML = "";
+    [0,6,12,18,24].forEach(h=>{
+      const pct = (h/24)*100;
+      const tick = document.createElement("div");
+      tick.className = "tl-tick";
+      tick.style.left = pct+"%";
+      track.appendChild(tick);
+      const lbl = document.createElement("div");
+      lbl.className = "tl-tick-label";
+      lbl.style.left = pct+"%";
+      lbl.textContent = pad(h===24?0:h)+":00";
+      track.appendChild(lbl);
+    });
+    currentData.sleeps.forEach(s=>{
+      if(!s.start || !s.end) return;
+      const left = timeToPercent(s.start);
+      let right = timeToPercent(s.end);
+      if(right < left) right = 100;
+      const bar = document.createElement("div");
+      bar.className = "tl-sleep";
+      bar.style.left = left+"%";
+      bar.style.width = Math.max(right-left,1)+"%";
+      bar.title = `睡眠 ${s.start}–${s.end}`;
+      track.appendChild(bar);
+    });
+    currentData.feedings.forEach(f=>{
+      if(!f.time || !f.done) return;
+      const dot = document.createElement("div");
+      dot.className = "tl-dot feed";
+      dot.style.left = "calc("+timeToPercent(f.time)+"% - 5px)";
+      dot.title = `餵食 ${f.time} ・ ${f.amount||0} cc`;
+      track.appendChild(dot);
+    });
+    currentData.pees.forEach(p=>{
+      if(!p.time) return;
+      const dot = document.createElement("div");
+      dot.className = "tl-dot pee";
+      dot.style.left = "calc("+timeToPercent(p.time)+"% - 5px)";
+      dot.title = `小便 ${p.time} ・ ${p.level||''}`;
+      track.appendChild(dot);
+    });
+    currentData.poops.forEach(p=>{
+      if(!p.time) return;
+      const dot = document.createElement("div");
+      dot.className = "tl-dot poop";
+      dot.style.left = "calc("+timeToPercent(p.time)+"% - 5px)";
+      dot.title = `大便 ${p.time}`;
+      track.appendChild(dot);
+    });
+    if(isSameDay(currentDate,new Date())){
+      const now = new Date();
+      const pct = ((now.getHours()*60+now.getMinutes())/1440)*100;
+      const line = document.createElement("div");
+      line.className = "tl-now";
+      line.style.left = pct+"%";
+      line.title = "現在";
+      track.appendChild(line);
+    }
+  }
+
+  // ---------- feeding ----------
+  function renderFeed(){
+    const list = document.getElementById("feedList");
+    list.innerHTML = "";
+    currentData.feedings.forEach(f=>{
+      const row = document.createElement("div");
+      const threshold = f.target===90 ? 60 : 90;
+      const low = Number(f.amount) < threshold;
+      row.className = "entry-row"+(f.done?" fed":"")+(low?" low-warn":"");
+      row.innerHTML = `
+        <button class="feed-toggle${f.done?' on':''}" data-toggle="${f.id}" aria-label="標記已餵">✓</button>
+        <span class="period-badge">${periodLabel(f.time)}</span>
+        <input type="time" step="900" value="${f.time||''}" data-id="${f.id}" data-field="time">
+        <div class="stepper mini">
+          <button data-amt-minus="${f.id}" aria-label="減少10cc">−</button>
+          <span class="val">${f.amount||0} cc</span>
+          <button data-amt-plus="${f.id}" aria-label="增加10cc">+</button>
+        </div>
+        ${low ? '<span class="feed-warn-badge" aria-label="奶量偏低">!</span>' : ''}`;
+      list.appendChild(row);
+    });
+    const total = currentData.feedings.filter(f=>f.done).reduce((s,f)=>s+(Number(f.amount)||0),0);
+    const totalWarn = total>0 && total<550;
+    document.getElementById("feedSummary").innerHTML =
+      `已餵總奶量 ${total} cc` + (totalWarn ? ' <span class="feed-warn">⚠ 低於550</span>' : '');
+  }
+
+  function renderSupplement(){
+    const btn = document.getElementById("supplementBtn");
+    if(currentData.supplement.given){
+      btn.classList.add("on");
+      btn.textContent = `寶乖牙・已餵 ${currentData.supplement.time}`;
+    }else{
+      btn.classList.remove("on");
+      btn.textContent = "寶乖牙・點擊記錄";
+    }
+  }
+
+  // ---------- sleep ----------
+  function durationHours(s){
+    if(!s.start||!s.end) return 0;
+    const [sh,sm]=s.start.split(":").map(Number);
+    const [eh,em]=s.end.split(":").map(Number);
+    let mins = (eh*60+em)-(sh*60+sm);
+    if(mins<0) mins += 1440;
+    return mins/60;
+  }
+  function renderSleepPresets(){
+    const wrap = document.getElementById("sleepPresets");
+    if(wrap.dataset.built) return;
+    wrap.innerHTML = SLEEP_PRESETS.map((p,i)=>
+      `<button type="button" class="chip sleep-preset" data-preset-idx="${i}">${p.label}</button>`
+    ).join("");
+    wrap.dataset.built = "1";
+  }
+  function renderSleep(){
+    const list = document.getElementById("sleepList");
+    list.innerHTML = "";
+    currentData.sleeps.forEach(s=>{
+      const row = document.createElement("div");
+      row.className = "entry-row";
+      row.innerHTML = `
+        <input type="time" step="900" value="${s.start||''}" data-id="${s.id}" data-field="start">
+        <span class="unit">–</span>
+        <input type="time" step="900" value="${s.end||''}" data-id="${s.id}" data-field="end">
+        <span class="unit">${durationHours(s).toFixed(1)} 小時</span>
+        <button class="del-btn" data-del="${s.id}" aria-label="刪除">✕</button>`;
+      list.appendChild(row);
+    });
+    const total = currentData.sleeps.reduce((s,x)=>s+durationHours(x),0);
+    document.getElementById("sleepSummary").textContent = `共 ${total.toFixed(1)} 小時`;
+  }
+
+  // ---------- poop & pee ----------
+  const COLOR_OPTS = ["黃色","綠色","褐色","黑色","白色(異常)","紅絲(異常)","其他"];
+  const TEXTURE_OPTS = ["稀水便","糊便","正常軟便","偏硬","顆粒狀"];
+  const PEE_LEVELS = ["少","正常","多"];
+  function renderPoop(){
+    const list = document.getElementById("poopList");
+    list.innerHTML = "";
+    currentData.poops.forEach(p=>{
+      const row = document.createElement("div");
+      row.className = "entry-row";
+      row.innerHTML = `
+        <input type="time" step="900" value="${p.time||''}" data-id="${p.id}" data-field="time">
+        <select data-id="${p.id}" data-field="color">
+          <option value="">顏色</option>
+          ${COLOR_OPTS.map(c=>`<option value="${c}" ${p.color===c?'selected':''}>${c}</option>`).join("")}
+        </select>
+        <select data-id="${p.id}" data-field="texture">
+          <option value="">質地</option>
+          ${TEXTURE_OPTS.map(t=>`<option value="${t}" ${p.texture===t?'selected':''}>${t}</option>`).join("")}
+        </select>
+        <input type="text" value="${p.note||''}" placeholder="異常備註(選填)" data-id="${p.id}" data-field="note">
+        <button class="del-btn" data-del="${p.id}" aria-label="刪除">✕</button>`;
+      list.appendChild(row);
+    });
+    updateDischargeSummary();
+  }
+  function renderPee(){
+    const list = document.getElementById("peeList");
+    list.innerHTML = "";
+    currentData.pees.forEach(p=>{
+      const row = document.createElement("div");
+      row.className = "entry-row";
+      row.innerHTML = `
+        <input type="time" step="900" value="${p.time||''}" data-id="${p.id}" data-field="time">
+        <select data-id="${p.id}" data-field="level">
+          <option value="">程度</option>
+          ${PEE_LEVELS.map(l=>`<option value="${l}" ${p.level===l?'selected':''}>${l}</option>`).join("")}
+        </select>
+        <button class="del-btn" data-del="${p.id}" aria-label="刪除">✕</button>`;
+      list.appendChild(row);
+    });
+    updateDischargeSummary();
+  }
+  function updateDischargeSummary(){
+    document.getElementById("dischargeSummary").textContent =
+      `大便 ${currentData.poops.length} 次・小便 ${currentData.pees.length} 次`;
+  }
+
+  // ---------- health ----------
+  function renderHealth(){
+    document.getElementById("tempInput").value = currentData.health.temp || "";
+    document.getElementById("moodSelect").value = currentData.health.mood || "";
+    document.getElementById("noteInput").value = currentData.health.note || "";
+    const chips = document.getElementById("symptomChips");
+    chips.innerHTML = "";
+    SYMPTOM_OPTIONS.forEach(s=>{
+      const on = currentData.health.symptoms.includes(s);
+      const chip = document.createElement("label");
+      chip.className = "chip"+(on?" on":"");
+      chip.innerHTML = `<input type="checkbox" ${on?'checked':''} data-symptom="${s}">${s}`;
+      chips.appendChild(chip);
+    });
+  }
+
+  function renderSummary(){
+    document.getElementById("statTemp").textContent = currentData.health.temp ? `${currentData.health.temp}°C` : "–";
+    const syms = currentData.health.symptoms;
+    const symEl = document.getElementById("statSymptoms");
+    symEl.textContent = syms.length ? syms.join("・") : "無";
+    symEl.classList.toggle("warn", syms.length>0);
+
+    const totalFed = currentData.feedings.filter(f=>f.done).reduce((s,f)=>s+(Number(f.amount)||0),0);
+    const feedEl = document.getElementById("statFeed");
+    feedEl.textContent = `${totalFed} cc`;
+    feedEl.classList.toggle("warn", totalFed>0 && totalFed<550);
+
+    const dischargeTotal = currentData.poops.length + currentData.pees.length;
+    document.getElementById("statDischarge").textContent = `${dischargeTotal} 次`;
+
+    const sleepTotal = currentData.sleeps.reduce((s,x)=>s+durationHours(x),0);
+    document.getElementById("statSleep").textContent = `${sleepTotal.toFixed(1)} 小時`;
+  }
+
+  function renderAll(){
+    renderDateNav();
+    renderTimeline();
+    renderFeed();
+    renderSupplement();
+    renderSleepPresets();
+    renderSleep();
+    renderPoop();
+    renderPee();
+    renderHealth();
+    renderSummary();
+  }
+
+  function setSyncStatus(text){
+    const el = document.getElementById("syncStatus");
+    if(el) el.textContent = text;
+  }
+  async function persist(){
+    setSyncStatus("儲存中…");
+    await saveDaily(currentDate, currentData);
+    setSyncStatus("已同步");
+    renderTimeline();
+    renderSummary();
+  }
+
+  // ---------- events: feeding ----------
+  document.getElementById("addFeed").onclick = async ()=>{
+    currentData.feedings.push({id:uid(), time:nowStr(), amount:120, done:false, target:120});
+    renderFeed(); await persist();
+  };
+  document.getElementById("feedList").addEventListener("input", async e=>{
+    const t = e.target; if(!t.dataset.id || t.dataset.field!=="time") return;
+    const item = currentData.feedings.find(f=>f.id===t.dataset.id);
+    if(item){ item.time = t.value; renderFeed(); await persist(); }
+  });
+  document.getElementById("feedList").addEventListener("click", async e=>{
+    if(e.target.dataset.toggle){
+      const item = currentData.feedings.find(f=>f.id===e.target.dataset.toggle);
+      if(item){ item.done = !item.done; renderFeed(); await persist(); }
+      return;
+    }
+    if(e.target.dataset.amtPlus){
+      const item = currentData.feedings.find(f=>f.id===e.target.dataset.amtPlus);
+      if(item){ item.amount = (Number(item.amount)||0)+10; renderFeed(); await persist(); }
+      return;
+    }
+    if(e.target.dataset.amtMinus){
+      const item = currentData.feedings.find(f=>f.id===e.target.dataset.amtMinus);
+      if(item){ item.amount = Math.max(0,(Number(item.amount)||0)-10); renderFeed(); await persist(); }
+      return;
+    }
+  });
+  document.getElementById("supplementBtn").onclick = async ()=>{
+    if(currentData.supplement.given){
+      currentData.supplement = {given:false, time:""};
+    }else{
+      currentData.supplement = {given:true, time:nowStr()};
+    }
+    renderSupplement(); await persist();
+  };
+
+  // ---------- events: sleep ----------
+  document.getElementById("addSleep").onclick = async ()=>{
+    currentData.sleeps.push({id:uid(), start:"", end:""});
+    renderSleep(); await persist();
+  };
+  document.getElementById("sleepPresets").addEventListener("click", async e=>{
+    const idx = e.target.dataset.presetIdx;
+    if(idx===undefined) return;
+    const p = SLEEP_PRESETS[Number(idx)];
+    currentData.sleeps.push({id:uid(), start:p.start, end:p.end});
+    renderSleep(); await persist();
+  });
+  document.getElementById("sleepList").addEventListener("input", async e=>{
+    const t = e.target; if(!t.dataset.id) return;
+    const item = currentData.sleeps.find(s=>s.id===t.dataset.id);
+    if(item){ item[t.dataset.field] = t.value; renderSleep(); await persist(); }
+  });
+  document.getElementById("sleepList").addEventListener("click", async e=>{
+    if(e.target.dataset.del){
+      currentData.sleeps = currentData.sleeps.filter(s=>s.id!==e.target.dataset.del);
+      renderSleep(); await persist();
+    }
+  });
+
+  // ---------- events: poop ----------
+  document.getElementById("addPoop").onclick = async ()=>{
+    currentData.poops.push({id:uid(), time:nowStr(), color:"", texture:"", note:""});
+    renderPoop(); await persist();
+  };
+  document.getElementById("poopList").addEventListener("input", async e=>{
+    const t = e.target; if(!t.dataset.id) return;
+    const item = currentData.poops.find(p=>p.id===t.dataset.id);
+    if(item){ item[t.dataset.field] = t.value; await persist(); }
+  });
+  document.getElementById("poopList").addEventListener("change", async e=>{
+    const t = e.target; if(!t.dataset.id) return;
+    const item = currentData.poops.find(p=>p.id===t.dataset.id);
+    if(item){ item[t.dataset.field] = t.value; await persist(); }
+  });
+  document.getElementById("poopList").addEventListener("click", async e=>{
+    if(e.target.dataset.del){
+      currentData.poops = currentData.poops.filter(p=>p.id!==e.target.dataset.del);
+      renderPoop(); await persist();
+    }
+  });
+
+  // ---------- events: pee ----------
+  document.getElementById("addPee").onclick = async ()=>{
+    currentData.pees.push({id:uid(), time:nowStr(), level:"正常"});
+    renderPee(); await persist();
+  };
+  document.getElementById("peeList").addEventListener("input", async e=>{
+    const t = e.target; if(!t.dataset.id) return;
+    const item = currentData.pees.find(p=>p.id===t.dataset.id);
+    if(item){ item[t.dataset.field] = t.value; await persist(); }
+  });
+  document.getElementById("peeList").addEventListener("change", async e=>{
+    const t = e.target; if(!t.dataset.id) return;
+    const item = currentData.pees.find(p=>p.id===t.dataset.id);
+    if(item){ item[t.dataset.field] = t.value; await persist(); }
+  });
+  document.getElementById("peeList").addEventListener("click", async e=>{
+    if(e.target.dataset.del){
+      currentData.pees = currentData.pees.filter(p=>p.id!==e.target.dataset.del);
+      renderPee(); await persist();
+    }
+  });
+
+  // ---------- events: health ----------
+  document.getElementById("tempInput").addEventListener("input", async e=>{
+    currentData.health.temp = e.target.value; await persist();
+  });
+  document.getElementById("moodSelect").addEventListener("change", async e=>{
+    currentData.health.mood = e.target.value; await persist();
+  });
+  document.getElementById("noteInput").addEventListener("input", async e=>{
+    currentData.health.note = e.target.value; await persist();
+  });
+  document.getElementById("symptomChips").addEventListener("change", async e=>{
+    const s = e.target.dataset.symptom; if(!s) return;
+    const set = new Set(currentData.health.symptoms);
+    if(e.target.checked) set.add(s); else set.delete(s);
+    currentData.health.symptoms = Array.from(set);
+    renderHealth(); await persist();
+  });
+
+  // ---------- date navigation ----------
+  document.getElementById("prevDay").onclick = async ()=>{
+    currentDate = new Date(currentDate); currentDate.setDate(currentDate.getDate()-1);
+    currentData = await loadDaily(currentDate); renderAll();
+  };
+  document.getElementById("nextDay").onclick = async ()=>{
+    currentDate = new Date(currentDate); currentDate.setDate(currentDate.getDate()+1);
+    currentData = await loadDaily(currentDate); renderAll();
+  };
+  document.getElementById("gotoToday").onclick = async ()=>{
+    currentDate = new Date(); currentData = await loadDaily(currentDate); renderAll();
+  };
+
+  // ---------- tabs ----------
+  document.querySelectorAll(".tab").forEach(btn=>{
+    btn.addEventListener("click", ()=>{
+      document.querySelectorAll(".tab").forEach(b=>b.classList.remove("active"));
+      btn.classList.add("active");
+      activeTab = btn.dataset.tab;
+      document.getElementById("dailyTab").style.display = activeTab==="daily" ? "" : "none";
+      document.getElementById("weeklyTab").style.display = activeTab==="weekly" ? "" : "none";
+      document.getElementById("summaryBar").style.display = activeTab==="daily" ? "" : "none";
+      if(activeTab==="weekly") renderGrowth();
+    });
+  });
+
+  // ---------- baby name ----------
+  const nameEl = document.getElementById("babyName");
+  nameEl.addEventListener("blur", async ()=>{
+    const profile = await loadProfile();
+    profile.name = nameEl.textContent.trim() || "芊健康日誌";
+    await saveProfile(profile);
+  });
+  nameEl.addEventListener("keydown", e=>{ if(e.key==="Enter"){ e.preventDefault(); nameEl.blur(); } });
+
+  // ---------- growth tab ----------
+  function svgLine(svg, values, color){
+    svg.innerHTML = "";
+    const pts = values.filter(v=>v.y!==null && v.y!==undefined && v.y!=="");
+    if(pts.length<2){
+      svg.innerHTML = `<text x="150" y="38" text-anchor="middle" font-size="11" fill="#8A7E76" font-family="Nunito Sans">資料不足,至少需 2 筆</text>`;
+      return;
+    }
+    const ys = pts.map(p=>Number(p.y));
+    const min = Math.min(...ys), max = Math.max(...ys);
+    const range = (max-min)||1;
+    const stepX = 280/(pts.length-1);
+    const coords = pts.map((p,i)=>{
+      const x = 10 + i*stepX;
+      const y = 60 - ((Number(p.y)-min)/range)*50;
+      return [x,y];
+    });
+    const path = coords.map((c,i)=> (i===0?"M":"L")+c[0].toFixed(1)+","+c[1].toFixed(1)).join(" ");
+    const ns = "http://www.w3.org/2000/svg";
+    const pathEl = document.createElementNS(ns,"path");
+    pathEl.setAttribute("d",path);
+    pathEl.setAttribute("fill","none");
+    pathEl.setAttribute("stroke",color);
+    pathEl.setAttribute("stroke-width","2.5");
+    pathEl.setAttribute("stroke-linecap","round");
+    pathEl.setAttribute("stroke-linejoin","round");
+    svg.appendChild(pathEl);
+    coords.forEach(c=>{
+      const dot = document.createElementNS(ns,"circle");
+      dot.setAttribute("cx",c[0]); dot.setAttribute("cy",c[1]); dot.setAttribute("r","3");
+      dot.setAttribute("fill",color);
+      svg.appendChild(dot);
+    });
+  }
+
+  function renderGrowth(){
+    const sorted = [...growthEntries].sort((a,b)=> a.date.localeCompare(b.date));
+    svgLine(document.getElementById("chartWeight"), sorted.map(e=>({y:e.weight})), "#4F7590");
+    svgLine(document.getElementById("chartHeight"), sorted.map(e=>({y:e.height})), "#DE9A5C");
+    svgLine(document.getElementById("chartHead"), sorted.map(e=>({y:e.head})), "#8B7CAE");
+
+    const list = document.getElementById("growthList");
+    list.innerHTML = "";
+    if(sorted.length===0){
+      list.innerHTML = `<div class="empty-hint">尚無生長紀錄,新增第一筆吧</div>`;
+      return;
+    }
+    [...sorted].reverse().forEach(e=>{
+      const row = document.createElement("div");
+      row.className = "growth-row";
+      row.innerHTML = `
+        <span class="g-date">${e.date}</span>
+        <span class="g-stat">體重 <b>${e.weight??'–'}</b> kg</span>
+        <span class="g-stat">身長 <b>${e.height??'–'}</b> cm</span>
+        <span class="g-stat">頭圍 <b>${e.head??'–'}</b> cm</span>
+        <span class="g-note">${e.note||''}</span>
+        <button class="del-btn" data-gdel="${e.id}" aria-label="刪除">✕</button>`;
+      list.appendChild(row);
+    });
+  }
+
+  document.getElementById("addGrowth").onclick = async ()=>{
+    const date = document.getElementById("gDate").value;
+    if(!date){ alert("請選擇日期"); return; }
+    const entry = {
+      id: uid(), date,
+      weight: document.getElementById("gWeight").value || null,
+      height: document.getElementById("gHeight").value || null,
+      head: document.getElementById("gHead").value || null,
+      note: ""
+    };
+    growthEntries.push(entry);
+    setSyncStatus("儲存中…");
+    await saveGrowth(growthEntries);
+    setSyncStatus("已同步");
+    document.getElementById("gWeight").value = "";
+    document.getElementById("gHeight").value = "";
+    document.getElementById("gHead").value = "";
+    renderGrowth();
+  };
+  document.getElementById("growthList").addEventListener("click", async e=>{
+    if(e.target.dataset.gdel){
+      growthEntries = growthEntries.filter(g=>g.id!==e.target.dataset.gdel);
+      setSyncStatus("儲存中…");
+      await saveGrowth(growthEntries);
+      setSyncStatus("已同步");
+      renderGrowth();
+    }
+  });
+
+  // ---------- init ----------
+  async function init(){
+    setSyncStatus("載入中…");
+    const profile = await loadProfile();
+    nameEl.textContent = profile.name || "芊健康日誌";
+    if(profile.birth){
+      const b = new Date(profile.birth);
+      const days = Math.floor((new Date()-b)/86400000);
+      document.getElementById("ageSub").textContent = `${Math.floor(days/7)} 週又 ${days%7} 天`;
+    }
+    currentData = await loadDaily(currentDate);
+    growthEntries = await loadGrowth();
+    document.getElementById("gDate").value = toKey(new Date());
+    renderAll();
+    setSyncStatus("已同步");
+  }
+  init();
+})();
+</script>
+</body>
+</html>

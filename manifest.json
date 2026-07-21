@@ -1,0 +1,11 @@
+{
+  "name": "芊健康日誌",
+  "short_name": "芊日誌",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#FAF5EF",
+  "theme_color": "#FAF5EF",
+  "icons": [
+    { "src": "apple-touch-icon.png", "sizes": "1024x1024", "type": "image/png" }
+  ]
+}
