@@ -460,8 +460,8 @@
     <div class="summary-bar" id="trendSummaryBar">
       <div class="stat-item"><span class="stat-label">平均每日奶量</span><span class="stat-value" id="trendFeed">0 cc</span><span class="stat-ref" id="trendFeedRef"></span></div>
       <div class="stat-item"><span class="stat-label">平均每日睡眠</span><span class="stat-value" id="trendSleep">0 小時</span><span class="stat-ref" id="trendSleepRef"></span></div>
-      <div class="stat-item"><span class="stat-label">大便次數</span><span class="stat-value" id="trendPoop">0 次</span></div>
-      <div class="stat-item"><span class="stat-label">小便次數</span><span class="stat-value" id="trendPee">0 次</span></div>
+      <div class="stat-item"><span class="stat-label">平均每日大便</span><span class="stat-value" id="trendPoop">0 次</span></div>
+      <div class="stat-item"><span class="stat-label">平均每日小便</span><span class="stat-value" id="trendPee">0 次</span></div>
       <div class="stat-item"><span class="stat-label">平均體溫</span><span class="stat-value" id="trendTemp">–</span><span class="stat-ref" id="trendTempRef"></span></div>
       <div class="stat-item"><span class="stat-label">不適症狀</span><span class="stat-value" id="trendSymptoms">無</span></div>
     </div>
@@ -470,6 +470,7 @@
       <div class="chart-card"><h3>每日總奶量(cc)</h3><svg id="trendChartFeed" viewBox="0 0 300 90"></svg></div>
       <div class="chart-card"><h3>每日睡眠時數</h3><svg id="trendChartSleep" viewBox="0 0 300 90"></svg></div>
     </div>
+    <p class="chart-disclaimer">淺藍色塊為該年齡常見的每日建議範圍(概略值),供大致參考,實際請以兒科醫師建議為準。</p>
   </div>
 
 </div>
@@ -1063,7 +1064,11 @@
 
     const entryPts = entries
       .filter(e=>e[field]!==null && e[field]!==undefined && e[field]!=="")
-      .map(e=>({m:ageInMonths(e.date), y:Number(e[field])}));
+      .map(e=>{
+        let y = Number(e[field]);
+        if(field==="weight" && y>50) y = y/1000; // 自動修正誤植為公克的體重數值
+        return {m:ageInMonths(e.date), y};
+      });
 
     const allYs = table.flatMap(r=>[r.p3,r.p97]);
     const tableMin = Math.min(...allYs), tableMax = Math.max(...allYs);
@@ -1195,14 +1200,27 @@
     if(trendPeriod==="week") return `${start.getMonth()+1}/${start.getDate()} – ${end.getMonth()+1}/${end.getDate()}`;
     return `${start.getFullYear()}年${start.getMonth()+1}月`;
   }
-  function renderBarChart(svg, dayList, values, color){
+  function renderBarChart(svg, dayList, values, color, refRange){
     svg.innerHTML = "";
     const ns = "http://www.w3.org/2000/svg";
     const pxLeft=20, pxRight=292, pxTop=8, pxBottom=68;
-    const max = Math.max(...values, 1);
+    const maxVal = Math.max(...values, 1);
+    const refMax = refRange ? refRange.max : 0;
+    const max = Math.max(maxVal, refMax) * 1.08;
     const n = values.length;
     const barGap = n>15 ? 1.5 : 4;
     const barWidth = Math.max(((pxRight-pxLeft)-(barGap*(n-1)))/n, 2);
+
+    if(refRange){
+      const yTop = pxBottom - (refRange.max/max)*(pxBottom-pxTop);
+      const yBottom = pxBottom - (refRange.min/max)*(pxBottom-pxTop);
+      const bandRect = document.createElementNS(ns,"rect");
+      bandRect.setAttribute("x",pxLeft); bandRect.setAttribute("y",yTop.toFixed(1));
+      bandRect.setAttribute("width",(pxRight-pxLeft).toFixed(1)); bandRect.setAttribute("height",Math.max(yBottom-yTop,0).toFixed(1));
+      bandRect.setAttribute("fill","#C9D6DD"); bandRect.setAttribute("opacity","0.4");
+      svg.appendChild(bandRect);
+    }
+
     values.forEach((v,i)=>{
       const x = pxLeft + i*(barWidth+barGap);
       const h = (v/max) * (pxBottom-pxTop);
@@ -1295,8 +1313,8 @@
       ? `建議 ${sleepRef.min}–${sleepRef.max}小時` : "";
     sleepEl.classList.toggle("warn", !!(sleepRef && recordedDays>0 && (avgSleep<sleepRef.min || avgSleep>sleepRef.max)));
 
-    document.getElementById("trendPoop").textContent = `${poopCount} 次`;
-    document.getElementById("trendPee").textContent = `${peeCount} 次`;
+    document.getElementById("trendPoop").textContent = `${(poopCount/days).toFixed(1)} 次`;
+    document.getElementById("trendPee").textContent = `${(peeCount/days).toFixed(1)} 次`;
 
     const tempEl = document.getElementById("trendTemp");
     const tempRefEl = document.getElementById("trendTempRef");
@@ -1315,8 +1333,8 @@
     const symptomList = Object.entries(symptomCounts).map(([k,v])=>`${k} ${v}天`).join("・");
     document.getElementById("trendSymptoms").textContent = symptomList || "無";
 
-    renderBarChart(document.getElementById("trendChartFeed"), dayList, feedByDay, "#DE9A5C");
-    renderBarChart(document.getElementById("trendChartSleep"), dayList, sleepByDay, "#6E9468");
+    renderBarChart(document.getElementById("trendChartFeed"), dayList, feedByDay, "#DE9A5C", feedRef);
+    renderBarChart(document.getElementById("trendChartSleep"), dayList, sleepByDay, "#6E9468", sleepRef);
   }
 
   document.getElementById("trendWeekBtn").onclick = ()=>{
@@ -1345,9 +1363,15 @@
   document.getElementById("addGrowth").onclick = async ()=>{
     const date = document.getElementById("gDate").value;
     if(!date){ alert("請選擇日期"); return; }
+    let weightVal = document.getElementById("gWeight").value;
+    if(weightVal && Number(weightVal) > 50){
+      const converted = (Number(weightVal)/1000).toFixed(2);
+      const useConverted = confirm(`體重輸入了 ${weightVal},看起來像是公克數。\n是否要自動換算成 ${converted} 公斤?\n(按「取消」則保留原數值 ${weightVal})`);
+      if(useConverted) weightVal = converted;
+    }
     const entry = {
       id: uid(), date,
-      weight: document.getElementById("gWeight").value || null,
+      weight: weightVal || null,
       height: document.getElementById("gHeight").value || null,
       head: document.getElementById("gHead").value || null,
       note: ""
