@@ -107,6 +107,7 @@
   .stat-label{font-size:0.72rem;color:var(--ink-soft);font-weight:700;}
   .stat-value{font-family:'JetBrains Mono',monospace;font-weight:700;font-size:1.05rem;color:var(--ink);}
   .stat-value.warn{color:var(--poop);}
+  .stat-ref{font-size:0.68rem;color:var(--ink-soft);}
   @media (max-width:680px){
     .stat-item{min-width:45%;border-right:none;border-bottom:1px solid var(--line);}
   }
@@ -457,11 +458,11 @@
     </div>
 
     <div class="summary-bar" id="trendSummaryBar">
-      <div class="stat-item"><span class="stat-label">總奶量</span><span class="stat-value" id="trendFeed">0 cc</span></div>
-      <div class="stat-item"><span class="stat-label">總睡眠</span><span class="stat-value" id="trendSleep">0 小時</span></div>
+      <div class="stat-item"><span class="stat-label">平均每日奶量</span><span class="stat-value" id="trendFeed">0 cc</span><span class="stat-ref" id="trendFeedRef"></span></div>
+      <div class="stat-item"><span class="stat-label">平均每日睡眠</span><span class="stat-value" id="trendSleep">0 小時</span><span class="stat-ref" id="trendSleepRef"></span></div>
       <div class="stat-item"><span class="stat-label">大便次數</span><span class="stat-value" id="trendPoop">0 次</span></div>
       <div class="stat-item"><span class="stat-label">小便次數</span><span class="stat-value" id="trendPee">0 次</span></div>
-      <div class="stat-item"><span class="stat-label">有量體溫天數</span><span class="stat-value" id="trendTempDays">0 天</span></div>
+      <div class="stat-item"><span class="stat-label">平均體溫</span><span class="stat-value" id="trendTemp">–</span><span class="stat-ref" id="trendTempRef"></span></div>
       <div class="stat-item"><span class="stat-label">不適症狀</span><span class="stat-value" id="trendSymptoms">無</span></div>
     </div>
 
@@ -1065,11 +1066,17 @@
       .map(e=>({m:ageInMonths(e.date), y:Number(e[field])}));
 
     const allYs = table.flatMap(r=>[r.p3,r.p97]);
-    const entryYs = entryPts.map(p=>p.y);
-    const yMin = Math.min(...allYs, ...(entryYs.length?entryYs:[allYs[0]]));
-    const yMax = Math.max(...allYs, ...(entryYs.length?entryYs:[allYs[allYs.length-1]]));
+    const tableMin = Math.min(...allYs), tableMax = Math.max(...allYs);
+    // 縱軸主要以WHO標準表範圍為準,只有在實際紀錄落在合理倍數內時才納入縮放考量,
+    // 避免單筆異常輸入(例如誤植單位)把整張圖壓垮、導致參考區間看起來消失
+    const reasonableEntryYs = entryPts.map(p=>p.y).filter(y=> y>=tableMin*0.5 && y<=tableMax*1.5);
+    const yMin = Math.min(tableMin, ...(reasonableEntryYs.length?reasonableEntryYs:[tableMin]));
+    const yMax = Math.max(tableMax, ...(reasonableEntryYs.length?reasonableEntryYs:[tableMax]));
     const yRange = (yMax-yMin)||1;
-    const yScale = v => pxBottom - ((v-yMin)/yRange)*(pxBottom-pxTop);
+    const yScale = v => {
+      const clamped = Math.min(Math.max(v,yMin),yMax);
+      return pxBottom - ((clamped-yMin)/yRange)*(pxBottom-pxTop);
+    };
 
     const topPts = table.map(r=>[xScale(r.m), yScale(r.p97)]);
     const bottomPts = [...table].reverse().map(r=>[xScale(r.m), yScale(r.p3)]);
@@ -1143,6 +1150,35 @@
   // ---------- trend tab (週/月趨勢) ----------
   let trendPeriod = "week";
   let trendDate = new Date();
+
+  // 一般常見的年齡別每日建議攝取量/睡眠時數參考範圍(概略值,實際請以兒科醫師建議為準)
+  const FEED_REFERENCE = [
+    {maxMonth:1, min:450, max:700},
+    {maxMonth:2, min:600, max:800},
+    {maxMonth:3, min:700, max:850},
+    {maxMonth:4, min:750, max:900},
+    {maxMonth:6, min:800, max:1000},
+    {maxMonth:99, min:800, max:1000}
+  ];
+  const SLEEP_REFERENCE = [
+    {maxMonth:3, min:14, max:17},
+    {maxMonth:11, min:12, max:16},
+    {maxMonth:99, min:11, max:14}
+  ];
+  function pickReference(table, ageMonths){
+    for(const r of table){ if(ageMonths<=r.maxMonth) return r; }
+    return table[table.length-1];
+  }
+  function currentAgeMonths(){
+    if(!babyBirthDate) return null;
+    return (new Date()-babyBirthDate)/(1000*60*60*24*30.4368);
+  }
+  function tempStatus(t){
+    if(t<36.0) return {label:"偏低・請留意", warn:true};
+    if(t<37.5) return {label:"正常範圍", warn:false};
+    if(t<38.0) return {label:"微燒・觀察", warn:true};
+    return {label:"發燒・建議就醫評估", warn:true};
+  }
 
   function getWeekRange(d){
     const day = (d.getDay()+6)%7;
@@ -1219,30 +1255,63 @@
       cursor.setDate(cursor.getDate()+1);
     }
 
-    let totalFeed=0, totalSleep=0, poopCount=0, peeCount=0, tempDays=0;
+    let totalFeed=0, totalSleep=0, poopCount=0, peeCount=0;
+    let tempSum=0, tempCount=0, recordedDays=0;
     const symptomCounts = {};
     const feedByDay = [], sleepByDay = [];
 
     dayList.forEach(dateStr=>{
       const rec = dayMap[dateStr];
       if(!rec){ feedByDay.push(0); sleepByDay.push(0); return; }
+      recordedDays++;
       const feedSum = rec.feedings.filter(f=>f.done).reduce((s,f)=>s+(Number(f.amount)||0),0);
       const sleepSum = rec.sleeps.reduce((s,x)=>s+durationHours(x),0);
       totalFeed += feedSum;
       totalSleep += sleepSum;
       poopCount += rec.poops.length;
       peeCount += rec.pees.length;
-      if(rec.health.temp) tempDays++;
+      if(rec.health.temp){ tempSum += Number(rec.health.temp); tempCount++; }
       rec.health.symptoms.forEach(s=>{ symptomCounts[s]=(symptomCounts[s]||0)+1; });
       feedByDay.push(feedSum);
       sleepByDay.push(sleepSum);
     });
 
-    document.getElementById("trendFeed").textContent = `${totalFeed} cc`;
-    document.getElementById("trendSleep").textContent = `${totalSleep.toFixed(1)} 小時`;
+    const days = recordedDays || 1;
+    const avgFeed = Math.round(totalFeed/days);
+    const avgSleep = totalSleep/days;
+    const ageMonths = currentAgeMonths();
+    const feedRef = ageMonths!==null ? pickReference(FEED_REFERENCE, ageMonths) : null;
+    const sleepRef = ageMonths!==null ? pickReference(SLEEP_REFERENCE, ageMonths) : null;
+
+    const feedEl = document.getElementById("trendFeed");
+    feedEl.textContent = `${avgFeed} cc`;
+    document.getElementById("trendFeedRef").textContent = feedRef
+      ? `建議 ${feedRef.min}–${feedRef.max}cc` : "";
+    feedEl.classList.toggle("warn", !!(feedRef && recordedDays>0 && (avgFeed<feedRef.min || avgFeed>feedRef.max)));
+
+    const sleepEl = document.getElementById("trendSleep");
+    sleepEl.textContent = `${avgSleep.toFixed(1)} 小時`;
+    document.getElementById("trendSleepRef").textContent = sleepRef
+      ? `建議 ${sleepRef.min}–${sleepRef.max}小時` : "";
+    sleepEl.classList.toggle("warn", !!(sleepRef && recordedDays>0 && (avgSleep<sleepRef.min || avgSleep>sleepRef.max)));
+
     document.getElementById("trendPoop").textContent = `${poopCount} 次`;
     document.getElementById("trendPee").textContent = `${peeCount} 次`;
-    document.getElementById("trendTempDays").textContent = `${tempDays} 天`;
+
+    const tempEl = document.getElementById("trendTemp");
+    const tempRefEl = document.getElementById("trendTempRef");
+    if(tempCount>0){
+      const avgTemp = tempSum/tempCount;
+      const status = tempStatus(avgTemp);
+      tempEl.textContent = `${avgTemp.toFixed(1)}°C`;
+      tempRefEl.textContent = status.label;
+      tempEl.classList.toggle("warn", status.warn);
+    }else{
+      tempEl.textContent = "–";
+      tempRefEl.textContent = "本期間無體溫紀錄";
+      tempEl.classList.remove("warn");
+    }
+
     const symptomList = Object.entries(symptomCounts).map(([k,v])=>`${k} ${v}天`).join("・");
     document.getElementById("trendSymptoms").textContent = symptomList || "無";
 
