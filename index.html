@@ -83,13 +83,16 @@
   }
   .today-btn:hover{filter:brightness(0.96);}
 
-  .tabs{display:flex;gap:8px;}
+  .tabs{display:flex;gap:8px;flex-wrap:wrap;}
   .tab{
     border:1px solid var(--line);background:var(--surface);color:var(--ink-soft);
     font-family:'Nunito Sans',sans-serif;font-weight:700;font-size:0.9rem;
-    padding:9px 18px;border-radius:999px;cursor:pointer;
+    padding:9px 18px;border-radius:999px;cursor:pointer;white-space:nowrap;
   }
   .tab.active{background:var(--ink);color:#fff;border-color:var(--ink);}
+  @media (max-width:480px){
+    .tab{padding:7px 12px;font-size:0.8rem;}
+  }
 
   /* ---------- Timeline (signature element) ---------- */
   .summary-bar{
@@ -261,8 +264,20 @@
   }
   .growth-form button.primary:hover{filter:brightness(1.08);}
 
-  .growth-charts{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:18px;}
+  .growth-charts{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:8px;}
   @media (max-width:680px){.growth-charts{grid-template-columns:1fr;}}
+  .chart-legend{display:flex;flex-wrap:wrap;gap:14px;font-size:0.72rem;color:var(--ink-soft);margin-bottom:10px;}
+  .chart-legend span{display:inline-flex;align-items:center;gap:5px;}
+  .chart-legend i{width:9px;height:9px;border-radius:50%;display:inline-block;}
+  .chart-disclaimer{font-size:0.72rem;color:var(--ink-soft);line-height:1.5;margin:4px 0 18px;}
+
+  .trend-nav{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;margin-bottom:18px;}
+  .period-toggle{display:flex;gap:6px;background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:4px;box-shadow:var(--shadow);}
+  .period-btn{
+    border:none;background:transparent;color:var(--ink-soft);font-weight:700;font-size:0.82rem;
+    padding:7px 16px;border-radius:999px;cursor:pointer;font-family:'Nunito Sans',sans-serif;
+  }
+  .period-btn.active{background:var(--ink);color:#fff;}
   .chart-card{background:var(--surface);border-radius:var(--radius);box-shadow:var(--shadow);padding:14px 16px;}
   .chart-card h3{font-size:0.82rem;margin:0 0 8px;color:var(--ink-soft);font-weight:700;}
   .chart-card svg{width:100%;height:70px;display:block;}
@@ -304,6 +319,7 @@
       <div class="tabs">
         <button class="tab active" data-tab="daily">每日紀錄</button>
         <button class="tab" data-tab="weekly">生長紀錄</button>
+        <button class="tab" data-tab="trend">週/月趨勢</button>
       </div>
     </div>
   </header>
@@ -312,7 +328,8 @@
     <div class="stat-item"><span class="stat-label">體溫</span><span class="stat-value" id="statTemp">–</span></div>
     <div class="stat-item"><span class="stat-label">不適症狀</span><span class="stat-value" id="statSymptoms">無</span></div>
     <div class="stat-item"><span class="stat-label">已餵總奶量</span><span class="stat-value" id="statFeed">0 cc</span></div>
-    <div class="stat-item"><span class="stat-label">排泄總次數</span><span class="stat-value" id="statDischarge">0 次</span></div>
+    <div class="stat-item"><span class="stat-label">大便次數</span><span class="stat-value" id="statPoop">0 次</span></div>
+    <div class="stat-item"><span class="stat-label">小便次數</span><span class="stat-value" id="statPee">0 次</span></div>
     <div class="stat-item"><span class="stat-label">睡眠總時數</span><span class="stat-value" id="statSleep">0 小時</span></div>
   </div>
 
@@ -397,6 +414,11 @@
 
   <!-- WEEKLY TAB -->
   <div id="weeklyTab" style="display:none;">
+    <div class="growth-form" style="grid-template-columns:1fr auto;">
+      <div class="field-row"><label>寶寶出生日期(用於對齊生長曲線月齡)</label><input type="date" id="birthDate"></div>
+      <button class="primary" id="saveBirthDate">儲存</button>
+    </div>
+
     <div class="growth-form">
       <div class="field-row"><label>日期</label><input type="date" id="gDate"></div>
       <div class="field-row"><label>體重(kg)</label><input type="number" step="0.01" id="gWeight" placeholder="例如 5.20"></div>
@@ -405,13 +427,48 @@
       <button class="primary" id="addGrowth">新增紀錄</button>
     </div>
 
-    <div class="growth-charts">
-      <div class="chart-card"><h3>體重趨勢(kg)</h3><svg id="chartWeight" viewBox="0 0 300 70"></svg></div>
-      <div class="chart-card"><h3>身長趨勢(cm)</h3><svg id="chartHeight" viewBox="0 0 300 70"></svg></div>
-      <div class="chart-card"><h3>頭圍趨勢(cm)</h3><svg id="chartHead" viewBox="0 0 300 70"></svg></div>
+    <div class="chart-legend">
+      <span><i style="background:#C9D6DD"></i>WHO參考範圍(P3–P97)</span>
+      <span><i style="background:#4F7590"></i>WHO中位數(P50)</span>
+      <span><i style="background:var(--feed)"></i>芊的紀錄</span>
     </div>
+    <div class="growth-charts">
+      <div class="chart-card"><h3>體重趨勢(kg)</h3><svg id="chartWeight" viewBox="0 0 300 90"></svg></div>
+      <div class="chart-card"><h3>身長趨勢(cm)</h3><svg id="chartHeight" viewBox="0 0 300 90"></svg></div>
+      <div class="chart-card"><h3>頭圍趨勢(cm)</h3><svg id="chartHead" viewBox="0 0 300 90"></svg></div>
+    </div>
+    <p class="chart-disclaimer">參考範圍採用WHO兒童生長標準(國健署兒童健康手冊生長曲線的資料依據),僅供大致參考,實際評估請以兒科醫師及健康手冊紀錄為準。</p>
 
     <div class="growth-list" id="growthList"></div>
+  </div>
+
+  <!-- TREND TAB -->
+  <div id="trendTab" style="display:none;">
+    <div class="trend-nav">
+      <div class="period-toggle">
+        <button class="period-btn active" id="trendWeekBtn" data-period="week">週</button>
+        <button class="period-btn" id="trendMonthBtn" data-period="month">月</button>
+      </div>
+      <div class="date-nav">
+        <button class="arrow" id="trendPrev" aria-label="上一個區間">‹</button>
+        <span class="date-label" id="trendLabel"></span>
+        <button class="arrow" id="trendNext" aria-label="下一個區間">›</button>
+      </div>
+    </div>
+
+    <div class="summary-bar" id="trendSummaryBar">
+      <div class="stat-item"><span class="stat-label">總奶量</span><span class="stat-value" id="trendFeed">0 cc</span></div>
+      <div class="stat-item"><span class="stat-label">總睡眠</span><span class="stat-value" id="trendSleep">0 小時</span></div>
+      <div class="stat-item"><span class="stat-label">大便次數</span><span class="stat-value" id="trendPoop">0 次</span></div>
+      <div class="stat-item"><span class="stat-label">小便次數</span><span class="stat-value" id="trendPee">0 次</span></div>
+      <div class="stat-item"><span class="stat-label">有量體溫天數</span><span class="stat-value" id="trendTempDays">0 天</span></div>
+      <div class="stat-item"><span class="stat-label">不適症狀</span><span class="stat-value" id="trendSymptoms">無</span></div>
+    </div>
+
+    <div class="growth-charts" style="grid-template-columns:1fr 1fr;">
+      <div class="chart-card"><h3>每日總奶量(cc)</h3><svg id="trendChartFeed" viewBox="0 0 300 90"></svg></div>
+      <div class="chart-card"><h3>每日睡眠時數</h3><svg id="trendChartSleep" viewBox="0 0 300 90"></svg></div>
+    </div>
   </div>
 
 </div>
@@ -461,6 +518,7 @@
     data.sleeps = data.sleeps || [];
     data.pees = data.pees || [];
     data.poops = data.poops || [];
+    data.poops.forEach(p=>{ if(!p.amount) p.amount = "正常"; });
     data.health = data.health || {};
     data.health.temp = data.health.temp || "";
     data.health.symptoms = data.health.symptoms || [];
@@ -502,6 +560,13 @@
       const body = new URLSearchParams({action:"set", key, value});
       await fetch(GAS_URL, {method:"POST", body});
     }catch(e){ console.error("儲存失敗", e); }
+  }
+  async function gasBatchGet(prefix){
+    try{
+      const res = await fetch(`${GAS_URL}?action=batchGet&prefix=${encodeURIComponent(prefix)}`);
+      const data = await res.json();
+      return (data && data.items) ? data.items : [];
+    }catch(e){ console.error("批次讀取失敗", e); return []; }
   }
 
   // ---------- storage helpers ----------
@@ -690,7 +755,7 @@
   // ---------- poop & pee ----------
   const COLOR_OPTS = ["黃色","綠色","褐色","黑色","白色(異常)","紅絲(異常)","其他"];
   const TEXTURE_OPTS = ["稀水便","糊便","正常軟便","偏硬","顆粒狀"];
-  const PEE_LEVELS = ["少","正常","多"];
+  const AMOUNT_OPTS = ["少","正常","多"];
   function renderPoop(){
     const list = document.getElementById("poopList");
     list.innerHTML = "";
@@ -700,12 +765,13 @@
       row.innerHTML = `
         <input type="time" step="900" value="${p.time||''}" data-id="${p.id}" data-field="time">
         <select data-id="${p.id}" data-field="color">
-          <option value="">顏色</option>
           ${COLOR_OPTS.map(c=>`<option value="${c}" ${p.color===c?'selected':''}>${c}</option>`).join("")}
         </select>
         <select data-id="${p.id}" data-field="texture">
-          <option value="">質地</option>
           ${TEXTURE_OPTS.map(t=>`<option value="${t}" ${p.texture===t?'selected':''}>${t}</option>`).join("")}
+        </select>
+        <select data-id="${p.id}" data-field="amount">
+          ${AMOUNT_OPTS.map(a=>`<option value="${a}" ${p.amount===a?'selected':''}>${a}</option>`).join("")}
         </select>
         <input type="text" value="${p.note||''}" placeholder="異常備註(選填)" data-id="${p.id}" data-field="note">
         <button class="del-btn" data-del="${p.id}" aria-label="刪除">✕</button>`;
@@ -721,10 +787,6 @@
       row.className = "entry-row";
       row.innerHTML = `
         <input type="time" step="900" value="${p.time||''}" data-id="${p.id}" data-field="time">
-        <select data-id="${p.id}" data-field="level">
-          <option value="">程度</option>
-          ${PEE_LEVELS.map(l=>`<option value="${l}" ${p.level===l?'selected':''}>${l}</option>`).join("")}
-        </select>
         <button class="del-btn" data-del="${p.id}" aria-label="刪除">✕</button>`;
       list.appendChild(row);
     });
@@ -764,7 +826,8 @@
     feedEl.classList.toggle("warn", totalFed>0 && totalFed<550);
 
     const dischargeTotal = currentData.poops.length + currentData.pees.length;
-    document.getElementById("statDischarge").textContent = `${dischargeTotal} 次`;
+    document.getElementById("statPoop").textContent = `${currentData.poops.length} 次`;
+    document.getElementById("statPee").textContent = `${currentData.pees.length} 次`;
 
     const sleepTotal = currentData.sleeps.reduce((s,x)=>s+durationHours(x),0);
     document.getElementById("statSleep").textContent = `${sleepTotal.toFixed(1)} 小時`;
@@ -858,7 +921,7 @@
 
   // ---------- events: poop ----------
   document.getElementById("addPoop").onclick = async ()=>{
-    currentData.poops.push({id:uid(), time:nowStr(), color:"", texture:"", note:""});
+    currentData.poops.push({id:uid(), time:nowStr(), color:"綠色", texture:"糊便", amount:"正常", note:""});
     renderPoop(); await persist();
   };
   document.getElementById("poopList").addEventListener("input", async e=>{
@@ -880,7 +943,7 @@
 
   // ---------- events: pee ----------
   document.getElementById("addPee").onclick = async ()=>{
-    currentData.pees.push({id:uid(), time:nowStr(), level:"正常"});
+    currentData.pees.push({id:uid(), time:nowStr()});
     renderPee(); await persist();
   };
   document.getElementById("peeList").addEventListener("input", async e=>{
@@ -939,8 +1002,10 @@
       activeTab = btn.dataset.tab;
       document.getElementById("dailyTab").style.display = activeTab==="daily" ? "" : "none";
       document.getElementById("weeklyTab").style.display = activeTab==="weekly" ? "" : "none";
+      document.getElementById("trendTab").style.display = activeTab==="trend" ? "" : "none";
       document.getElementById("summaryBar").style.display = activeTab==="daily" ? "" : "none";
       if(activeTab==="weekly") renderGrowth();
+      if(activeTab==="trend") loadTrendData();
     });
   });
 
@@ -954,45 +1019,106 @@
   nameEl.addEventListener("keydown", e=>{ if(e.key==="Enter"){ e.preventDefault(); nameEl.blur(); } });
 
   // ---------- growth tab ----------
-  function svgLine(svg, values, color){
+  // WHO 兒童生長標準(女嬰,P3/P50/P97),為國健署兒童健康手冊生長曲線的資料依據,僅供大致參考
+  const WHO_WEIGHT_GIRLS = [
+    {m:0,p3:2.4,p50:3.2,p97:4.2},{m:1,p3:3.2,p50:4.2,p97:5.5},{m:2,p3:3.9,p50:5.1,p97:6.6},
+    {m:3,p3:4.5,p50:5.8,p97:7.5},{m:4,p3:5.0,p50:6.4,p97:8.2},{m:5,p3:5.4,p50:6.9,p97:8.8},
+    {m:6,p3:5.7,p50:7.3,p97:9.3},{m:9,p3:6.5,p50:8.2,p97:10.5},{m:12,p3:7.0,p50:8.9,p97:11.5},
+    {m:15,p3:7.6,p50:9.6,p97:12.4},{m:18,p3:8.1,p50:10.2,p97:13.2},{m:21,p3:8.6,p50:10.9,p97:14.0},
+    {m:24,p3:9.0,p50:11.5,p97:14.8}
+  ];
+  const WHO_LENGTH_GIRLS = [
+    {m:0,p3:45.4,p50:49.1,p97:52.9},{m:1,p3:49.8,p50:53.7,p97:57.6},{m:2,p3:53.0,p50:57.1,p97:61.1},
+    {m:3,p3:55.6,p50:59.8,p97:63.8},{m:4,p3:57.8,p50:62.1,p97:66.4},{m:5,p3:59.6,p50:64.0,p97:68.5},
+    {m:6,p3:61.2,p50:65.7,p97:70.3},{m:9,p3:64.3,p50:69.2,p97:74.2},{m:12,p3:68.9,p50:74.0,p97:79.2},
+    {m:15,p3:71.6,p50:77.5,p97:83.0},{m:18,p3:74.0,p50:80.7,p97:86.5},{m:21,p3:76.2,p50:83.7,p97:89.9},
+    {m:24,p3:78.0,p50:86.4,p97:92.9}
+  ];
+  const WHO_HEAD_GIRLS = [
+    {m:0,p3:32.0,p50:33.9,p97:35.8},{m:1,p3:35.0,p50:36.5,p97:38.3},{m:2,p3:36.6,p50:38.3,p97:40.2},
+    {m:3,p3:38.0,p50:39.5,p97:41.5},{m:4,p3:38.9,p50:40.5,p97:42.5},{m:5,p3:39.6,p50:41.2,p97:43.3},
+    {m:6,p3:40.2,p50:41.9,p97:44.0},{m:9,p3:41.5,p50:43.2,p97:45.5},{m:12,p3:42.2,p50:44.1,p97:46.5},
+    {m:15,p3:42.9,p50:44.9,p97:47.3},{m:18,p3:43.4,p50:45.5,p97:48.0},{m:21,p3:43.8,p50:46.0,p97:48.6},
+    {m:24,p3:44.2,p50:46.4,p97:49.1}
+  ];
+  let babyBirthDate = null;
+  function ageInMonths(dateStr){
+    const d = new Date(dateStr+"T00:00:00");
+    return (d - babyBirthDate) / (1000*60*60*24*30.4368);
+  }
+  function renderReferenceChart(svg, table, entries, field){
     svg.innerHTML = "";
-    const pts = values.filter(v=>v.y!==null && v.y!==undefined && v.y!=="");
-    if(pts.length<2){
-      svg.innerHTML = `<text x="150" y="38" text-anchor="middle" font-size="11" fill="#8A7E76" font-family="Nunito Sans">資料不足,至少需 2 筆</text>`;
+    const ns = "http://www.w3.org/2000/svg";
+    if(!babyBirthDate){
+      const t = document.createElementNS(ns,"text");
+      t.setAttribute("x","150"); t.setAttribute("y","45"); t.setAttribute("text-anchor","middle");
+      t.setAttribute("font-size","11"); t.setAttribute("fill","#8A7E76"); t.setAttribute("font-family","Nunito Sans");
+      t.textContent = "請先填寫出生日期";
+      svg.appendChild(t);
       return;
     }
-    const ys = pts.map(p=>Number(p.y));
-    const min = Math.min(...ys), max = Math.max(...ys);
-    const range = (max-min)||1;
-    const stepX = 280/(pts.length-1);
-    const coords = pts.map((p,i)=>{
-      const x = 10 + i*stepX;
-      const y = 60 - ((Number(p.y)-min)/range)*50;
-      return [x,y];
-    });
-    const path = coords.map((c,i)=> (i===0?"M":"L")+c[0].toFixed(1)+","+c[1].toFixed(1)).join(" ");
-    const ns = "http://www.w3.org/2000/svg";
-    const pathEl = document.createElementNS(ns,"path");
-    pathEl.setAttribute("d",path);
-    pathEl.setAttribute("fill","none");
-    pathEl.setAttribute("stroke",color);
-    pathEl.setAttribute("stroke-width","2.5");
-    pathEl.setAttribute("stroke-linecap","round");
-    pathEl.setAttribute("stroke-linejoin","round");
-    svg.appendChild(pathEl);
-    coords.forEach(c=>{
+    const xMin=0, xMax=24, pxLeft=30, pxRight=292, pxTop=8, pxBottom=76;
+    const xScale = m => pxLeft + (Math.min(Math.max(m,xMin),xMax)-xMin)/(xMax-xMin)*(pxRight-pxLeft);
+
+    const entryPts = entries
+      .filter(e=>e[field]!==null && e[field]!==undefined && e[field]!=="")
+      .map(e=>({m:ageInMonths(e.date), y:Number(e[field])}));
+
+    const allYs = table.flatMap(r=>[r.p3,r.p97]);
+    const entryYs = entryPts.map(p=>p.y);
+    const yMin = Math.min(...allYs, ...(entryYs.length?entryYs:[allYs[0]]));
+    const yMax = Math.max(...allYs, ...(entryYs.length?entryYs:[allYs[allYs.length-1]]));
+    const yRange = (yMax-yMin)||1;
+    const yScale = v => pxBottom - ((v-yMin)/yRange)*(pxBottom-pxTop);
+
+    const topPts = table.map(r=>[xScale(r.m), yScale(r.p97)]);
+    const bottomPts = [...table].reverse().map(r=>[xScale(r.m), yScale(r.p3)]);
+    const band = document.createElementNS(ns,"polygon");
+    band.setAttribute("points", [...topPts, ...bottomPts].map(p=>p.join(",")).join(" "));
+    band.setAttribute("fill","#C9D6DD"); band.setAttribute("opacity","0.55");
+    svg.appendChild(band);
+
+    const p50Path = table.map((r,i)=>(i===0?"M":"L")+xScale(r.m).toFixed(1)+","+yScale(r.p50).toFixed(1)).join(" ");
+    const p50El = document.createElementNS(ns,"path");
+    p50El.setAttribute("d",p50Path); p50El.setAttribute("fill","none");
+    p50El.setAttribute("stroke","#4F7590"); p50El.setAttribute("stroke-width","1.4"); p50El.setAttribute("stroke-dasharray","4,3");
+    svg.appendChild(p50El);
+
+    const sortedEntry = [...entryPts].sort((a,b)=>a.m-b.m);
+    if(sortedEntry.length>=2){
+      const path = sortedEntry.map((p,i)=>(i===0?"M":"L")+xScale(p.m).toFixed(1)+","+yScale(p.y).toFixed(1)).join(" ");
+      const pathEl = document.createElementNS(ns,"path");
+      pathEl.setAttribute("d",path); pathEl.setAttribute("fill","none");
+      pathEl.setAttribute("stroke","#DE9A5C"); pathEl.setAttribute("stroke-width","2.5");
+      pathEl.setAttribute("stroke-linecap","round"); pathEl.setAttribute("stroke-linejoin","round");
+      svg.appendChild(pathEl);
+    }
+    sortedEntry.forEach(p=>{
       const dot = document.createElementNS(ns,"circle");
-      dot.setAttribute("cx",c[0]); dot.setAttribute("cy",c[1]); dot.setAttribute("r","3");
-      dot.setAttribute("fill",color);
+      dot.setAttribute("cx",xScale(p.m)); dot.setAttribute("cy",yScale(p.y)); dot.setAttribute("r","3.2");
+      dot.setAttribute("fill","#DE9A5C"); dot.setAttribute("stroke","#fff"); dot.setAttribute("stroke-width","1");
       svg.appendChild(dot);
+    });
+
+    [0,6,12,18,24].forEach(m=>{
+      const x = xScale(m);
+      const tick = document.createElementNS(ns,"line");
+      tick.setAttribute("x1",x); tick.setAttribute("x2",x); tick.setAttribute("y1",pxBottom); tick.setAttribute("y2",pxBottom+3);
+      tick.setAttribute("stroke","#8A7E76");
+      svg.appendChild(tick);
+      const label = document.createElementNS(ns,"text");
+      label.setAttribute("x",x); label.setAttribute("y",pxBottom+12); label.setAttribute("text-anchor","middle");
+      label.setAttribute("font-size","7.5"); label.setAttribute("fill","#8A7E76"); label.setAttribute("font-family","JetBrains Mono, monospace");
+      label.textContent = m+"m";
+      svg.appendChild(label);
     });
   }
 
   function renderGrowth(){
     const sorted = [...growthEntries].sort((a,b)=> a.date.localeCompare(b.date));
-    svgLine(document.getElementById("chartWeight"), sorted.map(e=>({y:e.weight})), "#4F7590");
-    svgLine(document.getElementById("chartHeight"), sorted.map(e=>({y:e.height})), "#DE9A5C");
-    svgLine(document.getElementById("chartHead"), sorted.map(e=>({y:e.head})), "#8B7CAE");
+    renderReferenceChart(document.getElementById("chartWeight"), WHO_WEIGHT_GIRLS, sorted, "weight");
+    renderReferenceChart(document.getElementById("chartHeight"), WHO_LENGTH_GIRLS, sorted, "height");
+    renderReferenceChart(document.getElementById("chartHead"), WHO_HEAD_GIRLS, sorted, "head");
 
     const list = document.getElementById("growthList");
     list.innerHTML = "";
@@ -1013,6 +1139,139 @@
       list.appendChild(row);
     });
   }
+
+  // ---------- trend tab (週/月趨勢) ----------
+  let trendPeriod = "week";
+  let trendDate = new Date();
+
+  function getWeekRange(d){
+    const day = (d.getDay()+6)%7;
+    const start = new Date(d.getFullYear(), d.getMonth(), d.getDate()-day);
+    const end = new Date(start.getFullYear(), start.getMonth(), start.getDate()+6);
+    return {start, end};
+  }
+  function getMonthRange(d){
+    const start = new Date(d.getFullYear(), d.getMonth(), 1);
+    const end = new Date(d.getFullYear(), d.getMonth()+1, 0);
+    return {start, end};
+  }
+  function fmtTrendLabel(start, end){
+    if(trendPeriod==="week") return `${start.getMonth()+1}/${start.getDate()} – ${end.getMonth()+1}/${end.getDate()}`;
+    return `${start.getFullYear()}年${start.getMonth()+1}月`;
+  }
+  function renderBarChart(svg, dayList, values, color){
+    svg.innerHTML = "";
+    const ns = "http://www.w3.org/2000/svg";
+    const pxLeft=20, pxRight=292, pxTop=8, pxBottom=68;
+    const max = Math.max(...values, 1);
+    const n = values.length;
+    const barGap = n>15 ? 1.5 : 4;
+    const barWidth = Math.max(((pxRight-pxLeft)-(barGap*(n-1)))/n, 2);
+    values.forEach((v,i)=>{
+      const x = pxLeft + i*(barWidth+barGap);
+      const h = (v/max) * (pxBottom-pxTop);
+      const rect = document.createElementNS(ns,"rect");
+      rect.setAttribute("x",x.toFixed(1)); rect.setAttribute("y",(pxBottom-h).toFixed(1));
+      rect.setAttribute("width",barWidth.toFixed(1)); rect.setAttribute("height",Math.max(h,0).toFixed(1));
+      rect.setAttribute("fill",color); rect.setAttribute("rx","2");
+      svg.appendChild(rect);
+    });
+    const base = document.createElementNS(ns,"line");
+    base.setAttribute("x1",pxLeft); base.setAttribute("x2",pxRight);
+    base.setAttribute("y1",pxBottom); base.setAttribute("y2",pxBottom);
+    base.setAttribute("stroke","#EAE0D3");
+    svg.appendChild(base);
+    const labelEvery = n<=7 ? 1 : Math.ceil(n/6);
+    dayList.forEach((dateStr,i)=>{
+      if(i%labelEvery!==0) return;
+      const d = new Date(dateStr+"T00:00:00");
+      const x = pxLeft + i*(barWidth+barGap) + barWidth/2;
+      const label = document.createElementNS(ns,"text");
+      label.setAttribute("x",x.toFixed(1)); label.setAttribute("y",pxBottom+11); label.setAttribute("text-anchor","middle");
+      label.setAttribute("font-size","7"); label.setAttribute("fill","#8A7E76"); label.setAttribute("font-family","JetBrains Mono, monospace");
+      label.textContent = (d.getMonth()+1)+"/"+d.getDate();
+      svg.appendChild(label);
+    });
+  }
+  async function loadTrendData(){
+    const {start,end} = trendPeriod==="week" ? getWeekRange(trendDate) : getMonthRange(trendDate);
+    document.getElementById("trendLabel").textContent = fmtTrendLabel(start,end);
+
+    const years = new Set([start.getFullYear(), end.getFullYear()]);
+    let items = [];
+    for(const y of years){
+      const batch = await gasBatchGet("daily:"+y);
+      items = items.concat(batch);
+    }
+    const dayMap = {};
+    items.forEach(it=>{
+      const dateStr = it.key.replace("daily:","");
+      const d = new Date(dateStr+"T00:00:00");
+      if(d>=start && d<=end){
+        try{ dayMap[dateStr] = normalizeDaily(JSON.parse(it.value)); }catch(e){}
+      }
+    });
+
+    const dayList = [];
+    const cursor = new Date(start);
+    while(cursor<=end){
+      dayList.push(toKey(cursor));
+      cursor.setDate(cursor.getDate()+1);
+    }
+
+    let totalFeed=0, totalSleep=0, poopCount=0, peeCount=0, tempDays=0;
+    const symptomCounts = {};
+    const feedByDay = [], sleepByDay = [];
+
+    dayList.forEach(dateStr=>{
+      const rec = dayMap[dateStr];
+      if(!rec){ feedByDay.push(0); sleepByDay.push(0); return; }
+      const feedSum = rec.feedings.filter(f=>f.done).reduce((s,f)=>s+(Number(f.amount)||0),0);
+      const sleepSum = rec.sleeps.reduce((s,x)=>s+durationHours(x),0);
+      totalFeed += feedSum;
+      totalSleep += sleepSum;
+      poopCount += rec.poops.length;
+      peeCount += rec.pees.length;
+      if(rec.health.temp) tempDays++;
+      rec.health.symptoms.forEach(s=>{ symptomCounts[s]=(symptomCounts[s]||0)+1; });
+      feedByDay.push(feedSum);
+      sleepByDay.push(sleepSum);
+    });
+
+    document.getElementById("trendFeed").textContent = `${totalFeed} cc`;
+    document.getElementById("trendSleep").textContent = `${totalSleep.toFixed(1)} 小時`;
+    document.getElementById("trendPoop").textContent = `${poopCount} 次`;
+    document.getElementById("trendPee").textContent = `${peeCount} 次`;
+    document.getElementById("trendTempDays").textContent = `${tempDays} 天`;
+    const symptomList = Object.entries(symptomCounts).map(([k,v])=>`${k} ${v}天`).join("・");
+    document.getElementById("trendSymptoms").textContent = symptomList || "無";
+
+    renderBarChart(document.getElementById("trendChartFeed"), dayList, feedByDay, "#DE9A5C");
+    renderBarChart(document.getElementById("trendChartSleep"), dayList, sleepByDay, "#6E9468");
+  }
+
+  document.getElementById("trendWeekBtn").onclick = ()=>{
+    trendPeriod = "week";
+    document.getElementById("trendWeekBtn").classList.add("active");
+    document.getElementById("trendMonthBtn").classList.remove("active");
+    loadTrendData();
+  };
+  document.getElementById("trendMonthBtn").onclick = ()=>{
+    trendPeriod = "month";
+    document.getElementById("trendMonthBtn").classList.add("active");
+    document.getElementById("trendWeekBtn").classList.remove("active");
+    loadTrendData();
+  };
+  document.getElementById("trendPrev").onclick = ()=>{
+    if(trendPeriod==="week") trendDate.setDate(trendDate.getDate()-7);
+    else trendDate.setMonth(trendDate.getMonth()-1);
+    loadTrendData();
+  };
+  document.getElementById("trendNext").onclick = ()=>{
+    if(trendPeriod==="week") trendDate.setDate(trendDate.getDate()+7);
+    else trendDate.setMonth(trendDate.getMonth()+1);
+    loadTrendData();
+  };
 
   document.getElementById("addGrowth").onclick = async ()=>{
     const date = document.getElementById("gDate").value;
@@ -1051,8 +1310,9 @@
     const profile = await loadProfile();
     nameEl.textContent = profile.name || "芊健康日誌";
     if(profile.birth){
-      const b = new Date(profile.birth);
-      const days = Math.floor((new Date()-b)/86400000);
+      babyBirthDate = new Date(profile.birth+"T00:00:00");
+      document.getElementById("birthDate").value = profile.birth;
+      const days = Math.floor((new Date()-babyBirthDate)/86400000);
       document.getElementById("ageSub").textContent = `${Math.floor(days/7)} 週又 ${days%7} 天`;
     }
     currentData = await loadDaily(currentDate);
@@ -1065,6 +1325,18 @@
     startPolling();
   }
   init();
+
+  document.getElementById("saveBirthDate").onclick = async ()=>{
+    const val = document.getElementById("birthDate").value;
+    if(!val) return;
+    const profile = await loadProfile();
+    profile.birth = val;
+    await saveProfile(profile);
+    babyBirthDate = new Date(val+"T00:00:00");
+    const days = Math.floor((new Date()-babyBirthDate)/86400000);
+    document.getElementById("ageSub").textContent = `${Math.floor(days/7)} 週又 ${days%7} 天`;
+    renderGrowth();
+  };
 
   // ---------- polling for near-live sync ----------
   function isEditingField(){
